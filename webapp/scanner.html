@@ -2,102 +2,57 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>DataMatrix Scanner</title>
+<title>Тест камеры</title>
 <style>
 body {
     font-family: sans-serif;
     text-align: center;
+    margin-top: 50px;
     background: #222831;
     color: #EEEEEE;
 }
 video {
     width: 90%;
     max-width: 400px;
-    margin-top: 20px;
     border: 2px solid #00ADB5;
 }
-input, button {
-    font-size: 18px;
-    margin-top: 10px;
-    padding: 8px;
-    width: 80%;
-    max-width: 300px;
-}
 button {
+    font-size: 18px;
+    margin-top: 20px;
+    padding: 10px 20px;
     background: #00ADB5;
     color: #222831;
     border: none;
     cursor: pointer;
 }
-#output {
-    color: #00ADB5;
-    margin-top: 15px;
-    white-space: pre-wrap;
-}
 </style>
 </head>
 <body>
 
-<h2>Сканер DataMatrix</h2>
+<h2>Тест камеры</h2>
 <button id="startBtn">Запустить камеру</button><br>
-<video id="video" autoplay playsinline></video><br>
-<input id="phone" placeholder="+71234567890" /><br>
-<button id="sendBtn">Подготовить данные</button>
+<video id="video" autoplay playsinline></video>
 
-<pre id="output"></pre>
-
-<script src="https://unpkg.com/@zxing/library@0.19.0/umd/index.min.js"></script>
 <script>
-let scannedCode = null;
-const video = document.getElementById('video');
 const startBtn = document.getElementById('startBtn');
-const sendBtn = document.getElementById('sendBtn');
-const phoneInput = document.getElementById('phone');
-const output = document.getElementById('output');
-const codeReader = new ZXing.BrowserDatamatrixCodeReader();
+const video = document.getElementById('video');
 
 startBtn.onclick = async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert("Камера не поддерживается этим устройством");
+        return;
+    }
+
     try {
+        // Запрашиваем доступ к камере (задняя камера)
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
         video.srcObject = stream;
         video.play();
-
         startBtn.style.display = "none"; // скрываем кнопку после старта камеры
-        output.textContent = "Камера запущена. Покажите DataMatrix коду.";
-
-        // Даем немного времени, чтобы видео стартовало
-        setTimeout(() => {
-            scanCode();
-        }, 500);
     } catch(err) {
         alert("Ошибка доступа к камере: " + err);
         console.error(err);
     }
-};
-
-function scanCode() {
-    if (!video.srcObject) return;
-
-    codeReader.decodeFromVideoDevice(null, video, (result, err) => {
-        if (result && !scannedCode) {
-            scannedCode = result.text;
-            alert("Код найден: " + scannedCode);
-            output.textContent = "Сканирован код: " + scannedCode;
-            // останавливаем камеру после сканирования
-            video.srcObject.getTracks().forEach(track => track.stop());
-        }
-    });
-}
-
-sendBtn.onclick = () => {
-    const phone = phoneInput.value.trim();
-    if (!scannedCode) return alert("Сначала сканируйте код!");
-    if (!/^\+?\d{10,15}$/.test(phone)) return alert("Неверный формат телефона");
-
-    const data = { code: scannedCode, phone };
-    output.textContent = JSON.stringify(data, null, 2);
-    console.log("Готовые данные для бота:", data);
-    alert("Данные готовы! Проверьте консоль или скопируйте JSON ниже.");
 };
 </script>
 
