@@ -29,55 +29,66 @@ button {
     border: none;
     cursor: pointer;
 }
+#output {
+    color: #00ADB5;
+    margin-top: 15px;
+    white-space: pre-wrap;
+}
 </style>
 </head>
 <body>
 
 <h2>Сканер DataMatrix</h2>
+<button id="startBtn">Запустить камеру</button><br>
 <video id="video" autoplay playsinline></video><br>
 <input id="phone" placeholder="+71234567890" /><br>
 <button id="sendBtn">Подготовить данные</button>
 
-<pre id="output" style="color:#00ADB5; margin-top:15px;"></pre>
+<pre id="output"></pre>
 
 <script src="https://unpkg.com/@zxing/library@0.19.0/umd/index.min.js"></script>
 <script>
 let scannedCode = null;
 const video = document.getElementById('video');
+const startBtn = document.getElementById('startBtn');
+const sendBtn = document.getElementById('sendBtn');
+const phoneInput = document.getElementById('phone');
 const output = document.getElementById('output');
 const codeReader = new ZXing.BrowserDatamatrixCodeReader();
 
-// Функция запуска камеры
-function startCamera() {
+// Функция запуска камеры по клику
+startBtn.onclick = async () => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         alert("Камера не поддерживается этим устройством");
         return;
     }
 
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-    .then(stream => { video.srcObject = stream; })
-    .catch(err => {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        video.srcObject = stream;
+        startBtn.style.display = "none"; // скрываем кнопку после старта камеры
+        scanCode();
+    } catch(err) {
         alert("Ошибка доступа к камере: " + err);
         console.error(err);
-    });
+    }
+};
 
-    // Сканирование DataMatrix
+// Функция сканирования DataMatrix
+function scanCode() {
     codeReader.decodeFromVideoDevice(null, video, (result, err) => {
         if (result && !scannedCode) {
             scannedCode = result.text;
             alert("Код найден: " + scannedCode);
-            // Останавливаем камеру после сканирования
+            // останавливаем камеру после сканирования
             video.srcObject.getTracks().forEach(track => track.stop());
         }
     });
 }
 
-// Запуск камеры при загрузке страницы
-window.addEventListener('load', startCamera);
-
-// Кнопка "Подготовить данные"
-document.getElementById('sendBtn').onclick = () => {
-    const phone = document.getElementById('phone').value.trim();
+// Подготовка JSON для бота
+sendBtn.onclick = () => {
+    const phone = phoneInput.value.trim();
     if (!scannedCode) return alert("Сначала сканируйте код!");
     if (!/^\+?\d{10,15}$/.test(phone)) return alert("Неверный формат телефона");
 
