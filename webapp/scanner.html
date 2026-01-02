@@ -36,18 +36,16 @@ button {
 <h2>Сканер DataMatrix</h2>
 <video id="video" autoplay playsinline></video><br>
 <input id="phone" placeholder="+71234567890" /><br>
-<button id="sendBtn">Отправить</button>
+<button id="sendBtn">Подготовить данные</button>
+
+<pre id="output" style="color:#00ADB5; margin-top:15px;"></pre>
 
 <script src="https://unpkg.com/@zxing/library@0.19.0/umd/index.min.js"></script>
 <script>
 let scannedCode = null;
 const video = document.getElementById('video');
+const output = document.getElementById('output');
 const codeReader = new ZXing.BrowserDatamatrixCodeReader();
-
-// Инициализация Telegram Web App
-if (window.Telegram && window.Telegram.WebApp) {
-    window.Telegram.WebApp.ready();
-}
 
 // Функция запуска камеры
 function startCamera() {
@@ -57,9 +55,7 @@ function startCamera() {
     }
 
     navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-    .then(stream => {
-        video.srcObject = stream;
-    })
+    .then(stream => { video.srcObject = stream; })
     .catch(err => {
         alert("Ошибка доступа к камере: " + err);
         console.error(err);
@@ -76,19 +72,19 @@ function startCamera() {
     });
 }
 
-// Запуск камеры после инициализации Telegram Web App
-if (window.Telegram && window.Telegram.WebApp) {
-    startCamera();
-} else {
-    window.addEventListener('load', startCamera);
-}
+// Запуск камеры при загрузке страницы
+window.addEventListener('load', startCamera);
 
-// Кнопка "Отправить" для бота
+// Кнопка "Подготовить данные"
 document.getElementById('sendBtn').onclick = () => {
     const phone = document.getElementById('phone').value.trim();
     if (!scannedCode) return alert("Сначала сканируйте код!");
     if (!/^\+?\d{10,15}$/.test(phone)) return alert("Неверный формат телефона");
-    Telegram.WebApp.sendData(JSON.stringify({ code: scannedCode, phone }));
+
+    const data = { code: scannedCode, phone };
+    output.textContent = JSON.stringify(data, null, 2);
+    console.log("Готовые данные для бота:", data);
+    alert("Данные готовы! Проверьте консоль или скопируйте JSON ниже.");
 };
 </script>
 
