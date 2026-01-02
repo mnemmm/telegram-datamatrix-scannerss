@@ -56,37 +56,39 @@ const phoneInput = document.getElementById('phone');
 const output = document.getElementById('output');
 const codeReader = new ZXing.BrowserDatamatrixCodeReader();
 
-// Функция запуска камеры по клику
 startBtn.onclick = async () => {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        alert("Камера не поддерживается этим устройством");
-        return;
-    }
-
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
         video.srcObject = stream;
+        video.play();
+
         startBtn.style.display = "none"; // скрываем кнопку после старта камеры
-        scanCode();
+        output.textContent = "Камера запущена. Покажите DataMatrix коду.";
+
+        // Даем немного времени, чтобы видео стартовало
+        setTimeout(() => {
+            scanCode();
+        }, 500);
     } catch(err) {
         alert("Ошибка доступа к камере: " + err);
         console.error(err);
     }
 };
 
-// Функция сканирования DataMatrix
 function scanCode() {
+    if (!video.srcObject) return;
+
     codeReader.decodeFromVideoDevice(null, video, (result, err) => {
         if (result && !scannedCode) {
             scannedCode = result.text;
             alert("Код найден: " + scannedCode);
+            output.textContent = "Сканирован код: " + scannedCode;
             // останавливаем камеру после сканирования
             video.srcObject.getTracks().forEach(track => track.stop());
         }
     });
 }
 
-// Подготовка JSON для бота
 sendBtn.onclick = () => {
     const phone = phoneInput.value.trim();
     if (!scannedCode) return alert("Сначала сканируйте код!");
