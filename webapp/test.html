@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Camera Test</title>
+</head>
+<body>
+<h2>Тест камеры</h2>
+<video id="video" autoplay playsinline width="320" height="240" style="border:1px solid black;"></video>
+
+<script>
+const video = document.getElementById('video');
+
+navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+.then(stream => {
+    video.srcObject = stream;
+})
+.catch(err => {
+    alert("Ошибка доступа к камере: " + err);
+    console.error(err);
+});
+</script>
+</body>
+</html>
