@@ -12,39 +12,57 @@ button { background: #00ADB5; color: #222831; border: none; cursor: pointer; }
 </head>
 <body>
 <h2>Сканер DataMatrix</h2>
-<video id="video" autoplay></video><br>
+<video id="video" autoplay playsinline></video><br>
 <input id="phone" placeholder="+71234567890" /><br>
 <button id="sendBtn">Отправить</button>
 
 <script src="https://unpkg.com/@zxing/library@0.19.0/umd/index.min.js"></script>
 <script>
-const codeReader = new ZXing.BrowserDatamatrixCodeReader();
-const video = document.getElementById('video');
-const phoneInput = document.getElementById('phone');
-const sendBtn = document.getElementById('sendBtn');
 let scannedCode = null;
+const video = document.getElementById('video');
+const codeReader = new ZXing.BrowserDatamatrixCodeReader();
 
-// Запуск камеры
-navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-  .then(stream => { video.srcObject = stream; })
-  .catch(err => alert("Ошибка камеры: " + err));
-
-// Сканирование DataMatrix
-codeReader.decodeFromVideoDevice(null, video, (result, err) => {
-  if (result) {
-    scannedCode = result.text;
-    alert("Код найден: " + scannedCode);
-    video.srcObject.getTracks().forEach(track => track.stop());
-  }
-});
-
-// Отправка данных боту
-sendBtn.onclick = () => {
-  const phone = phoneInput.value.trim();
-  if (!scannedCode) return alert("Сначала сканируйте код!");
-  if (!/^\+?\d{10,15}$/.test(phone)) return alert("Неверный формат телефона");
-  Telegram.WebApp.sendData(JSON.stringify({ code: scannedCode, phone }));
+// Telegram WebApp инициализация
+if (window.Telegram && window.Telegram.WebApp) {
+    window.Telegram.WebApp.ready();
 }
+
+// Функция запуска камеры
+function startCamera() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert("Камера не поддерживается этим устройством");
+        return;
+    }
+
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+    .then(stream => { video.srcObject = stream; })
+    .catch(err => alert("Ошибка доступа к камере: " + err));
+
+    // Сканирование DataMatrix
+    codeReader.decodeFromVideoDevice(null, video, (result, err) => {
+        if (result && !scannedCode) {
+            scannedCode = result.text;
+            alert("Код найден: " + scannedCode);
+            // останавливаем камеру после сканирования
+            video.srcObject.getTracks().forEach(track => track.stop());
+        }
+    });
+}
+
+// Запускаем камеру после полной инициализации Telegram WebApp
+if (window.Telegram && window.Telegram.WebApp) {
+    startCamera();
+} else {
+    window.addEventListener('load', startCamera);
+}
+
+// Кнопка "Отправить" для бота
+document.getElementById('sendBtn').onclick = () => {
+    const phone = document.getElementById('phone').value.trim();
+    if (!scannedCode) return alert("Сначала сканируйте код!");
+    if (!/^\+?\d{10,15}$/.test(phone)) return alert("Неверный формат телефона");
+    Telegram.WebApp.sendData(JSON.stringify({ code: scannedCode, phone }));
+};
 </script>
 </body>
 </html>
