@@ -1,16 +1,38 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
 <meta charset="UTF-8">
 <title>DataMatrix Scanner</title>
 <style>
-body { font-family: sans-serif; text-align: center; background: #222831; color: #EEEEEE; }
-video { width: 90%; max-width: 400px; margin-top: 20px; border: 2px solid #00ADB5; }
-input, button { font-size: 18px; margin-top: 10px; padding: 8px; width: 80%; max-width: 300px; }
-button { background: #00ADB5; color: #222831; border: none; cursor: pointer; }
+body {
+    font-family: sans-serif;
+    text-align: center;
+    background: #222831;
+    color: #EEEEEE;
+}
+video {
+    width: 90%;
+    max-width: 400px;
+    margin-top: 20px;
+    border: 2px solid #00ADB5;
+}
+input, button {
+    font-size: 18px;
+    margin-top: 10px;
+    padding: 8px;
+    width: 80%;
+    max-width: 300px;
+}
+button {
+    background: #00ADB5;
+    color: #222831;
+    border: none;
+    cursor: pointer;
+}
 </style>
 </head>
 <body>
+
 <h2>Сканер DataMatrix</h2>
 <video id="video" autoplay playsinline></video><br>
 <input id="phone" placeholder="+71234567890" /><br>
@@ -22,7 +44,7 @@ let scannedCode = null;
 const video = document.getElementById('video');
 const codeReader = new ZXing.BrowserDatamatrixCodeReader();
 
-// Telegram WebApp инициализация
+// Инициализация Telegram Web App
 if (window.Telegram && window.Telegram.WebApp) {
     window.Telegram.WebApp.ready();
 }
@@ -35,21 +57,26 @@ function startCamera() {
     }
 
     navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-    .then(stream => { video.srcObject = stream; })
-    .catch(err => alert("Ошибка доступа к камере: " + err));
+    .then(stream => {
+        video.srcObject = stream;
+    })
+    .catch(err => {
+        alert("Ошибка доступа к камере: " + err);
+        console.error(err);
+    });
 
     // Сканирование DataMatrix
     codeReader.decodeFromVideoDevice(null, video, (result, err) => {
         if (result && !scannedCode) {
             scannedCode = result.text;
             alert("Код найден: " + scannedCode);
-            // останавливаем камеру после сканирования
+            // Останавливаем камеру после сканирования
             video.srcObject.getTracks().forEach(track => track.stop());
         }
     });
 }
 
-// Запускаем камеру после полной инициализации Telegram WebApp
+// Запуск камеры после инициализации Telegram Web App
 if (window.Telegram && window.Telegram.WebApp) {
     startCamera();
 } else {
@@ -64,5 +91,6 @@ document.getElementById('sendBtn').onclick = () => {
     Telegram.WebApp.sendData(JSON.stringify({ code: scannedCode, phone }));
 };
 </script>
+
 </body>
 </html>
